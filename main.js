@@ -99,13 +99,14 @@ recruse(folderToScan, {writefilter: filter}).on('data', file => {
     }
 	
 	console.info('⏳ Converting data into CSV...');
-    const EMPTY_CSV_ROW = '"",""';
-    const csvHeader = '"Song","File"';
+    const EMPTY_CSV_ROW = '"";""';
+    const csvHeader = '"Song";"File"';
 	const csvData = Object.keys(filesThatHaveDuplicates).map(key => {
+	    const keyEscaped = key.replace(/[\"\'\n\r;]/, '_');
         const files = filesThatHaveDuplicates[key];
-        const filesEscaped = files.map(file => file.replace(/\"\'\n\r/, ''));
+        const filesEscaped = files.map(file => file.replace(/[\"\'\n\r;]/, '_'));
 
-        return filesEscaped.map(file => `"${key}","${file}"`);
+        return filesEscaped.map(file => `"${keyEscaped}";"${file}"`);
     }).map(rows => [...rows, EMPTY_CSV_ROW]).flatMap(x => x);
     const csv = [csvHeader, EMPTY_CSV_ROW, ...csvData].join('\n');
 	
