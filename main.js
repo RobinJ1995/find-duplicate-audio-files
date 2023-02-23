@@ -10,7 +10,7 @@ const folderToScan = process.argv[2] ?? process.env.FOLDER_TO_SCAN ?? process.cw
 
 let startAnswer = null;
     while (startAnswer !== 'yes') {
-        console.info(`ℹ️ The following directory will be scanned for duplicate audio files:: ${folderToScan}`);
+        console.info(`ℹ️ The following directory will be scanned for duplicate audio files: ${folderToScan}`);
 
         startAnswer = prompt('❓ Would you like to continue? (yes/no) ');
         if (startAnswer?.toLowerCase() === 'no') {
@@ -26,7 +26,6 @@ const audioFilesMap = {};
 
 const filter = (path, stat) => {
 	if (stat.isDirectory()) {
-		console.log(`📂 ${path}`);
 		return false;
 	}
 	
@@ -36,10 +35,23 @@ const filter = (path, stat) => {
 const parseTags = file => MusicMetadata.parseFile(file).then(x => x?.common);
 const parseTasks = [];
 
+let nFound = 0;
+let nProcessed = 0;
+const logStatus = () => console.log(`⚙️ ${nProcessed}/${nFound}`);
+let scanning = false;
+setInterval(() => {
+    if (!scanning) {
+        return;
+    }
+
+    logStatus();
+}, 100);
+
 console.info('⏳ Scanning folder...');
+scanning = true;
 
 recruse(folderToScan, {writefilter: filter}).on('data', file => {
-	console.log(`📄 ${file}`);
+	nFound++;
 	
 	parseTasks.push(() => new Promise((resolve, reject) => {
 		parseTags(file)
@@ -49,18 +61,13 @@ recruse(folderToScan, {writefilter: filter}).on('data', file => {
                 const id3Title = tags?.['title'];
 
                 const key = (id3Artist && id3Title)
-                    ? `${removeDiacriticalMarks(id3Artist)} - ${removeDiacriticalMarks(id3Title)}`
-                    : removeDiacriticalMarks(filenameWithoutExtension);
-                const song = (id3Artist && id3Title)
-                    ? `${id3Artist} - ${id3Title}`
-                    : filenameWithoutExtension;
+                    ? `${removeDiacriticalMarks(id3Artist.toLowerCase())} - ${removeDiacriticalMarks(id3Title.toLowerCase())}`
+                    : removeDiacriticalMarks(filenameWithoutExtension.toLowerCase());
 
                 if (audioFilesMap?.[key] === undefined) {
                     audioFilesMap[key] = [];
                 }
                 audioFilesMap[key].push(file);
-
-				console.log(`🎵 ${song}`);
 			})
 			.catch(err => {
 				console.error(`🛑 Failed to process file: ${file}`);
@@ -74,7 +81,10 @@ recruse(folderToScan, {writefilter: filter}).on('data', file => {
 	console.info('⏳ Parsing files...');
 	for (const parseTask of parseTasks) {
 		await parseTask();
+		nProcessed++;
 	}
+	scanning = false;
+	logStatus();
 	console.info('ℹ️ Parsing complete.');
 
     console.info('⏳ Scanning for duplicates...');
