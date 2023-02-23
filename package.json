@@ -1,0 +1,22 @@
+{
+  "name": "find-duplicate-audio-files",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Robin Jacobs",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "id3-parser": "^2.0.0",
+    "music-metadata": "^7.8.1",
+    "prompt-sync": "^4.2.0",
+    "recurse": "^3.0.2",
+    "remove-diacritical-marks": "^1.0.1",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.0"
+  }
+}
